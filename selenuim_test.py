@@ -13,11 +13,11 @@ browser.get(url)
 
 #Enter e-mail adress to login and fill in.
 sa = browser.find_element_by_name('email')
-sa.send_keys("HERE_YOUR_LOGIN_TO_MEETUP.COM")
+sa.send_keys("mic100@hotmail.fr")
 
 #Do the same thing for password and fill in.
 sb = browser.find_element_by_name('password')
-sb.send_keys('HERE_YOUR_PASSWORD_TO_MEETUP.COM')
+sb.send_keys('femmes125')
 sb.send_keys(Keys.RETURN)
 
 urla = "https://www.meetup.com/fr-FR/cultiver-autrement-des-legumes-a-paris/members/"
@@ -49,6 +49,61 @@ def gsfh() :
     
 #-----------------------------------------------------------------------------#
 
+def gmm_data() :
+
+    #get meetup members location.     
+    a = gsfh().find_all('span', {'class' : 'locality'})
+    location = a[1].text.strip()
+    print 'location :', location
+
+    #get meetup members membership date.
+    b = gsfh().find_all('div', {'class' : 'unit size1of3'})  
+    gm_date = b[1].find_all('p')[0].text.strip()
+    print 'gm_date :', gm_date
+    
+    #get meetup members membership photo url.
+    c = gsfh().find_all('img', {'class' : 'D_memberProfilePhoto photo big-preview-photo'})
+    thumb_url = c[0].get('src')
+    print 'thumb_url :', thumb_url
+    
+    #get meetup members common membership group name.
+    d = gsfh().find_all('div', {'class' : 'figureset-description'})
+    d1 = [i.find_all('a') for i in d] 
+    cmgl = []
+    for j in d1 :
+        cmg = {}
+        cmg['%s' %(j[0].text)] = j[0].get('href')
+        cmgl.append(cmg)
+    print 'common_group :', len(cmgl), cmgl#, '\n'
+    
+    #get meetup members other groups (all groups).
+    e = gsfh().find_all('ul', {'id' : 'my-meetup-groups-list'})
+    try : 
+        e1 = [i.find_all('div', {'class' : 'D_name bold'}) for i in e][0]
+        mogl = []
+        for k in e1 :
+            mog = {}
+            k1 = k.find_all('a', {'class' : 'omnCamp omngj_pcg4'})[0]        
+            mog['%s' %(k1.text)] = k1.get('href')
+            mogl.append(mog)
+        print 'meetup member other group :', len(mogl), mogl#, '\n'
+    except : 
+        mogl = []
+        print 'other_groups :', len(mogl), mogl, '\n'
+        
+    #get meetup member personnal interests.
+    f = gsfh().find_all('ul', {'id' : 'memberTopicList'})
+    f1 = [i.find_all('a') for i in f][0]
+    mpil = []
+    for l in f1 :
+        mpi = {}
+        mpi[l.text] = l.get('href')
+        mpil.append(mpi)
+    print 'personnal_interests :', len(mpil), mpil, '\n'
+
+    
+#-----------------------------------------------------------------------------#
+
 def gmm(origin=gsfh()) :
     
     h = origin.find_all('ul',{'id' : 'memberList'})[0]
@@ -74,6 +129,7 @@ def gmm(origin=gsfh()) :
         actions = ActionChains(browser)
         actions.move_to_element('%s' %(elem)) 
         browser.find_element_by_xpath('//a[@href="%s"]' %(link)).click()
+        gmm_data()
         browser.back()
         time.sleep(3)
 
@@ -145,6 +201,7 @@ for i in s2 :
         pu.append(a)
         action(browser, a, b)
         gmm()
+        break
 
 #-----------------------------------------------------------------------------#
 
