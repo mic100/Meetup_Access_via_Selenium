@@ -13,11 +13,11 @@ browser.get(url)
 
 #Enter e-mail adress to login and fill in.
 sa = browser.find_element_by_name('email')
-sa.send_keys("mic100@hotmail.fr")
+sa.send_keys("YOUR_LOGIN_HERE")
 
 #Do the same thing for password and fill in.
 sb = browser.find_element_by_name('password')
-sb.send_keys('femmes125')
+sb.send_keys('YOUR_PASSWORD_HERE')
 sb.send_keys(Keys.RETURN)
 
 urla = "https://www.meetup.com/fr-FR/cultiver-autrement-des-legumes-a-paris/members/"
