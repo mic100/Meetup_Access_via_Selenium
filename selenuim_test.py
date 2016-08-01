@@ -20,7 +20,8 @@ sb = browser.find_element_by_name('password')
 sb.send_keys('YOUR_PASSWORD_HERE')
 sb.send_keys(Keys.RETURN)
 
-urla = "https://www.meetup.com/fr-FR/cultiver-autrement-des-legumes-a-paris/members/"
+#urla = "https://www.meetup.com/fr-FR/cultiver-autrement-des-legumes-a-paris/members/"
+urla = "YOUR_GROUP_URL_HERE"
 
 actions = ActionChains(browser)
 actions.move_to_element('Membres')
