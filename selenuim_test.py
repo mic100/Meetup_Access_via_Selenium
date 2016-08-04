@@ -258,7 +258,7 @@ def main(YOUR_DIRECTORY_TO_SAVE_DATA, YOUR_MEETUP_LOGIN_GROUP_URL_HERE, \
 if __name__ == "__main__" :
     
     today_date = datetime.date.today().isoformat()
-    #example of my login adress
+    #example of my login to group adress
     YOUR_MEETUP_LOGIN_GROUP_URL_HERE = "https://secure.meetup.com/fr-FR/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2Ffr-FR%2Fcultiver-autrement-des-legumes-a-paris%2F"    
     YOUR_MEETUP_GROUP_URL_HERE = "your_meetup.com_group_url" + "/members/"
     YOUR_MEETUP_LOGIN_NAME_HERE = "your_meetup.com_login"
