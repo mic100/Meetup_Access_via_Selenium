@@ -1,24 +1,21 @@
 # -*- coding: utf-8 -*-
 
+#-----------------------------------------------------------------------------#
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from bs4 import BeautifulSoup as bs
 import time
-from xlwt import Workbook
 import os
-import json
-
-#-----------------------------------------------------------------------------#
-
-#mongodb connection. 
+import datetime
 
 #-----------------------------------------------------------------------------#
 
 #text file connection. 
-def txt_wd(data) :
+def txt_wd(YOUR_DIRECTORY_TO_SAVE_DATA, data) :
     
-    rep_dir='C:/Users/akesso.olivier/Box Sync/__[PERSO]__/__Data__/__txt__/'
+    rep_dir= YOUR_DIRECTORY_TO_SAVE_DATA
     book_name = '%s.txt' %(data[0]['name'])
     
     if os.path.exists(rep_dir) :
@@ -34,28 +31,6 @@ def txt_wd(data) :
         file = open(rep_dir + book_name, 'w')
         file.write(str(data))
         file.close()         
-#-----------------------------------------------------------------------------#
-
-#json file connection. 
-def json_wd(data) :
-    
-    rep_dir='C:/Users/akesso.olivier/Box Sync/__[PERSO]__/__Data__/__json__/'
-    
-    book_name = '%s' %(data[0]['name'])
-    
-    if os.path.exists(rep_dir) :
-        #save of excel file to directory.        
-        file = open(rep_dir + book_name, 'w')
-        json.dumps(data)
-        file.close() 
-    else : 
-        print 'Create folder', rep_dir, '\n'
-        #create folder if not exist.
-        os.mkdir(rep_dir)
-        #save jsan file to directory.
-        file = open(rep_dir + book_name, 'w')
-        json.dumps(data)
-        file.close() 
         
 #-----------------------------------------------------------------------------#
 
@@ -79,17 +54,19 @@ def gsfh(browser) :
     
 #-----------------------------------------------------------------------------#
 
-def get_mm_data(browser, s='yes') :
+def get_mm_data(YOUR_DIRECTORY_TO_SAVE_DATA, browser, s='yes') :
 
     STATUS = s #STATUS (='no'(off),='yes'(on))   
     
     if STATUS == 'no' :
         pass
     elif STATUS == 'yes' :
+        
         dict1, dict2, dict3, dict4, dict5, dict6, dict7, dict8, dict9, \
         dict10, dict11 = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
+
         #get meetup member name and profile page url.
-        g = gsfh(browser).find_all('span', {'class' : 'memName fn'})[0].text
+        g = gsfh(browser).find_all('span', {'itemprop' : 'name'})[0].text
         dict1['name'] = g.lower()
         dict2['profile_url'] = browser.current_url
 
@@ -148,24 +125,22 @@ def get_mm_data(browser, s='yes') :
         dict11['personnal_interests_num'] = len(mpil)
         
         #get all dict in a data list.
-        data = [dict1, dict2, dict3, dict4, dict5, dict6, dict7, dict8, dict9, \
+        data_dict = [dict1, dict2, dict3, dict4, dict5, dict6, dict7, dict8, dict9, \
                 dict10, dict11]
              
         #write data to excel file.
-        txt_wd(data=data)
-        #write data to json file.
-#        json_wd(data)
+        txt_wd(YOUR_DIRECTORY_TO_SAVE_DATA, data=data_dict)
                 
-        return data
+        return data_dict
 
 #-----------------------------------------------------------------------------#
 
-def get_mm(browser, t=3) :
+def get_mm(YOUR_MEETUP_GROUP_URL_HERE, YOUR_DIRECTORY_TO_SAVE_DATA, browser, t=3) :
     
     h = gsfh(browser).find_all('ul',{'id' : 'memberList'})[0]
     h = h.find_all('a', {'class' : 'memName'})
     
-    mytext = "https://www.meetup.com/fr-FR/cultiver-autrement-des-legumes-a-paris/members/"
+    mytext = YOUR_MEETUP_GROUP_URL_HERE
     item_list = []
     
     for i in h : 
@@ -178,35 +153,37 @@ def get_mm(browser, t=3) :
     for j in item_list :
         memnum = j.keys()[0]
         elem = j[memnum]
-        link = "https://www.meetup.com/fr-FR/cultiver-autrement-des-legumes-a-paris/members/%s/" %(memnum)
+        link = YOUR_MEETUP_GROUP_URL_HERE + "%s/" %(memnum)
         actions = ActionChains(browser)
         actions.move_to_element('%s' %(elem)) 
         browser.find_element_by_xpath('//a[@href="%s"]' %(link)).click()
         #use of gmm_data here to get members data like in the meetup API
         #get meetup members data and write it to :
         #excel file
-        get_mm_data(browser)
+        get_mm_data(YOUR_DIRECTORY_TO_SAVE_DATA, browser)
         browser.back()
         time.sleep(t)
 
 #-----------------------------------------------------------------------------#
 
-def main(YOUR_MEETUP.COM_GROUP_URL_HERE, YOUR_MEETUP.COM_LOGIN_HERE, YOUR_MEETUP.COM_PASSWORD_HERE) :
+def main(YOUR_DIRECTORY_TO_SAVE_DATA, YOUR_MEETUP_LOGIN_GROUP_URL_HERE, \
+    YOUR_MEETUP_GROUP_URL_HERE, YOUR_MEETUP_LOGIN_NAME_HERE, \
+    YOUR_MEETUP_PASSWORD_HERE) :
 
-    url = "YOUR_MEETUP.COM_GROUP_URL_HERE"
+    url = YOUR_MEETUP_LOGIN_GROUP_URL_HERE 
     browser = webdriver.Firefox()
     browser.get(url)
     
     #Enter e-mail adress to login and fill in.
     sa = browser.find_element_by_name('email')
-    sa.send_keys("YOUR_MEETUP.COM_LOGIN_HERE")
+    sa.send_keys(YOUR_MEETUP_LOGIN_NAME_HERE)
     
     #Do the same thing for password and fill in.
     sb = browser.find_element_by_name('password')
-    sb.send_keys('YOUR_MEETUP.COM_PASSWORD_HERE')
+    sb.send_keys(YOUR_MEETUP_PASSWORD_HERE)
     sb.send_keys(Keys.RETURN)
     
-    urla = "YOUR_MEETUP.COM_GROUP_URL_HERE" + "/members/"
+    urla = YOUR_MEETUP_GROUP_URL_HERE
     
     actions = ActionChains(browser)
     actions.move_to_element('Membres')
@@ -226,7 +203,8 @@ def main(YOUR_MEETUP.COM_GROUP_URL_HERE, YOUR_MEETUP.COM_LOGIN_HERE, YOUR_MEETUP
     
             pu.append(a)
             action(browser=browser, a=a, b=b)
-            get_mm(browser, t=5)
+            get_mm(YOUR_MEETUP_GROUP_URL_HERE, YOUR_DIRECTORY_TO_SAVE_DATA, \
+                    browser, t=5)
             html1 = browser.page_source
             #parse the html page with bs4.
             soup2 = bs(html1,'html.parser')
@@ -238,7 +216,8 @@ def main(YOUR_MEETUP.COM_GROUP_URL_HERE, YOUR_MEETUP.COM_LOGIN_HERE, YOUR_MEETUP
                 if a1 not in pu :
                     pu.append(a1)                
                     action(browser=browser, a=a1, b=b1)
-                    get_mm(browser, t=5)
+                    get_mm(YOUR_MEETUP_GROUP_URL_HERE, \
+                            YOUR_DIRECTORY_TO_SAVE_DATA, browser, t=5)
                 else :
                     pass
                 
@@ -249,7 +228,8 @@ def main(YOUR_MEETUP.COM_GROUP_URL_HERE, YOUR_MEETUP.COM_LOGIN_HERE, YOUR_MEETUP
                     if a1 not in pu :
                         pu.append(a1)                    
                         action(browser=browser, a=a1, b=b1)
-                        get_mm(browser, t=5)
+                        get_mm(YOUR_MEETUP_GROUP_URL_HERE, \
+                                YOUR_DIRECTORY_TO_SAVE_DATA, browser, t=5)
                     else :
                         pass
                     
@@ -263,19 +243,30 @@ def main(YOUR_MEETUP.COM_GROUP_URL_HERE, YOUR_MEETUP.COM_LOGIN_HERE, YOUR_MEETUP
                         if a2 not in pu :
                             pu.append(a2)                        
                             action(browser=browser, a=a2, b=b2)
-                            get_mm(browser, t=5)
+                            get_mm(YOUR_MEETUP_GROUP_URL_HERE, \
+                                    YOUR_DIRECTORY_TO_SAVE_DATA, browser, t=5)
                         else :
                             pass                     
         else : 
             pu.append(a)
             action(browser=browser, a=a, b=b)
-            get_mm(browser, t=5)
+            get_mm(YOUR_MEETUP_GROUP_URL_HERE, YOUR_DIRECTORY_TO_SAVE_DATA, \
+                    browser, t=3)
 
 #-----------------------------------------------------------------------------#
 
 if __name__ == "__main__" :
     
-    main(YOUR_MEETUP.COM_GROUP_URL_HERE, YOUR_MEETUP.COM_LOGIN_HERE, YOUR_MEETUP.COM_PASSWORD_HERE)
+    today_date = datetime.date.today().isoformat()
+    #example of my login adress
+    YOUR_MEETUP_LOGIN_GROUP_URL_HERE = "https://secure.meetup.com/fr-FR/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2Ffr-FR%2Fcultiver-autrement-des-legumes-a-paris%2F"    
+    YOUR_MEETUP_GROUP_URL_HERE = "your_meetup.com_group_url" + "/members/"
+    YOUR_MEETUP_LOGIN_NAME_HERE = "your_meetup.com_login"
+    YOUR_MEETUP_PASSWORD_HERE = 'your_password'
+    YOUR_DIRECTORY_TO_SAVE_DATA = 'C:/__%s__/' %(today_date) 
     
-#    pass
+    main(YOUR_DIRECTORY_TO_SAVE_DATA, YOUR_MEETUP_LOGIN_GROUP_URL_HERE, \
+            YOUR_MEETUP_GROUP_URL_HERE, YOUR_MEETUP_LOGIN_NAME_HERE, \
+            YOUR_MEETUP_PASSWORD_HERE)
+
     
