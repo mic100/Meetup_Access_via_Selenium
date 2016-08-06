@@ -9,28 +9,32 @@ from bs4 import BeautifulSoup as bs
 import time
 import os
 import datetime
+import json
 
 #-----------------------------------------------------------------------------#
 
 #text file connection. 
 def txt_wd(YOUR_DIRECTORY_TO_SAVE_DATA, data) :
     
+#    print type(data), data, '\n'
+    
     rep_dir= YOUR_DIRECTORY_TO_SAVE_DATA
-    book_name = '%s.txt' %(data[0]['name'])
+    book_name = '%s.txt' %(data['name'])
     
     if os.path.exists(rep_dir) :
-        #save of .txt file to directory.        
-        file = open(rep_dir + book_name, 'w')
-        file.write(str(data))
-        file.close() 
+        #encode data to json type.
+        with open(rep_dir + book_name, 'w') as f :
+            json.dump(data, f, sort_keys = True)            
     else : 
-        print 'Create folder', rep_dir, '\n'
+        print 'Directory', rep_dir, 'does not exists'
+        print 'Create', rep_dir, 'directory', '\n'
         #create folder if not exist.
         os.mkdir(rep_dir)
-        #save .txt file to directory.
-        file = open(rep_dir + book_name, 'w')
-        file.write(str(data))
-        file.close()         
+        #encode data to json type.
+        with open(rep_dir + book_name, 'w') as f :
+            json.dump(data, f, sort_keys = True)            
+    #close file.
+    f.close()         
         
 #-----------------------------------------------------------------------------#
 
@@ -54,92 +58,145 @@ def gsfh(browser) :
     
 #-----------------------------------------------------------------------------#
 
-def get_mm_data(YOUR_DIRECTORY_TO_SAVE_DATA, browser, s='yes') :
+def get_mm_data(YOUR_DIRECTORY_TO_SAVE_DATA, browser, x, y, s='yes') :
 
+#    print x, '\n'
+#    print y, '\n'
+    
     STATUS = s #STATUS (='no'(off),='yes'(on))   
     
     if STATUS == 'no' :
         pass
     elif STATUS == 'yes' :
         
-        dict1, dict2, dict3, dict4, dict5, dict6, dict7, dict8, dict9, \
-        dict10, dict11 = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
-
+        dict1 = {}
+        
         #get meetup member name and profile page url.
         g = gsfh(browser).find_all('span', {'itemprop' : 'name'})[0].text
+        #get data from get_mm function.
+        dict1['today_date'] = x
+        dict1['last_con'] = y
         dict1['name'] = g.lower()
-        dict2['profile_url'] = browser.current_url
+        dict1['profile_url'] = browser.current_url
 
         #get meetup members location.     
         a = gsfh(browser).find_all('span', {'class' : 'locality'})
         location = a[1].text#.strip()
-        dict3['location'] = location
+        dict1['location'] = location
     
         #get meetup members membership date.
         b = gsfh(browser).find_all('div', {'class' : 'unit size1of3'})  
-        gm_date = b[1].find_all('p')[0].text#.strip()
-        dict4['gm_date'] = gm_date
+        gm_date = b[1].find_all('p')[0].text
+        gm_date = gm_date.split(' ')
+        #calcul des mois.
+        if gm_date[1] == u'd\xe9cembre' :
+            mois_num = u'12'
+        elif gm_date[1] == u'novembre' :           
+            mois_num = u'11'
+        elif gm_date[1] == u'octobre' :
+            mois_num = u'10'
+        elif gm_date[1] == u'septembre' :
+            mois_num = u'09'            
+        elif gm_date[1] == u'ao\xfbt' :
+            mois_num = u'08'
+        elif gm_date[1] == u'juillet' :
+            mois_num = u'07'
+        elif gm_date[1] == u'juin' :
+            mois_num = u'06'
+        elif gm_date[1] == u'mai' :           
+            mois_num = u'05'
+        elif gm_date[1] == u'avril' :
+            mois_num = u'04'
+        elif gm_date[1] == u'mars' :
+            mois_num = u'03'
+        elif gm_date[1] == u'f\xe9vrier' :         
+            mois_num = u'02'
+        elif gm_date[1] == u'janvier' :            
+            mois_num = u'01'
+        else :
+            pass
+        
+        if int(gm_date[0]) < 10 :
+            gm_date = '0' + gm_date[0] +  '/' + mois_num + '/' + gm_date[2].replace('20','')
+        else :
+            gm_date = gm_date[0] +  '/' + mois_num + '/' + gm_date[2].replace('20','')
+        dict1['gm_date'] = gm_date
         
         #get meetup members membership photo url.
-        c = gsfh(browser).find_all('img', {'class' : 'D_memberProfilePhoto photo big-preview-photo'})
+        c = gsfh(browser).find_all('img', \
+                    {'class' : 'D_memberProfilePhoto photo big-preview-photo'})
         thumb_url = c[0].get('src')
-        dict5['thumb_url'] = thumb_url
+        dict1['thumb_url'] = thumb_url
         
         #get meetup members common membership group name.
         d = gsfh(browser).find_all('div', {'class' : 'figureset-description'})
         d1 = [i.find_all('a') for i in d] 
-        cmgl = []
+        cmgl, cmgd = [], {}
         for j in d1 :
-            cmg = {}
-            cmg['%s' %(j[0].text)] = j[0].get('href')
-            cmgl.append(cmg)
-        dict6['common_group'] = cmgl
-        dict7['common_group_num'] = len(cmgl)
+            cmgd['%s' %(j[0].text)] = j[0].get('href')
+            cmgl.append(j)
+        dict1['common_group'] = cmgd
+        dict1['common_group_num'] = len(cmgl)
         
         #get meetup members other groups (all groups).
         e = gsfh(browser).find_all('ul', {'id' : 'my-meetup-groups-list'})
         try : 
             e1 = [i.find_all('div', {'class' : 'D_name bold'}) for i in e][0]
-            mogl = []
+            mogl, mogd = [], {}
             for k in e1 :
-                mog = {}
                 k1 = k.find_all('a', {'class' : 'omnCamp omngj_pcg4'})[0]        
-                mog['%s' %(k1.text)] = k1.get('href')
-                mogl.append(mog)
-            dict8['other_group'] = mogl
-            dict9['other_group_num'] = len(mogl)
+                mogd['%s' %(k1.text)] = k1.get('href')
+                mogl.append(k)
+            dict1['other_group'] = mogd
+            dict1['other_group_num'] = len(mogl)
         except : 
-            mogl = []
-            dict8['other_group'] = mogl
-            dict9['other_group_num'] = len(mogl)
+            mogl, mogd = [], {}            
+            dict1['other_group'] = mogl
+            dict1['other_group_num'] = len(mogl)
             
         #get meetup member personnal interests.
         f = gsfh(browser).find_all('ul', {'id' : 'memberTopicList'})
         f1 = [i.find_all('a') for i in f][0]
-        mpil = []
+        mpil, mpid = [], {}
         for l in f1 :
-            mpi = {}
-            mpi[l.text] = l.get('href')
-            mpil.append(mpi)
-        dict10['personnal_interests'] = mpil
-        dict11['personnal_interests_num'] = len(mpil)
-        
-        #get all dict in a data list.
-        data_dict = [dict1, dict2, dict3, dict4, dict5, dict6, dict7, dict8, dict9, \
-                dict10, dict11]
+            mpid[l.text] = l.get('href')
+            mpil.append(l)
+        dict1['personnal_interests'] = mpid
+        dict1['personnal_interests_num'] = len(mpil)
              
         #write data to excel file.
-        txt_wd(YOUR_DIRECTORY_TO_SAVE_DATA, data=data_dict)
-                
-        return data_dict
+        txt_wd(YOUR_DIRECTORY_TO_SAVE_DATA, data=dict1)
+        
+        print dict1, '\n'
+        
+        return dict1
 
 #-----------------------------------------------------------------------------#
 
-def get_mm(YOUR_MEETUP_GROUP_URL_HERE, YOUR_DIRECTORY_TO_SAVE_DATA, browser, t=3) :
+def get_mm(YOUR_MEETUP_GROUP_URL_HERE, YOUR_DIRECTORY_TO_SAVE_DATA, \
+            browser, t=3) :
     
     h = gsfh(browser).find_all('ul',{'id' : 'memberList'})[0]
     h = h.find_all('a', {'class' : 'memName'})
+
+    #data to pass to get_mm_data in data disctionnary.
+    l1 = []
+    for i in h :
+#        a = i.find_all('span')#[0]#.text.strip()
+        a = datetime.date.today()
+        a = a.strftime("%d/%m/%y")
+        l1.append(a)
+
+    #get meetup member last visit to meetup page.
+    p = gsfh(browser).find_all('ul', \
+                {'class' : 'resetList clear-both memberStats small'})
     
+    #data to pass to get_mm_data in data disctionnary.            
+    l2 = []
+    for i in p :
+        a = i.find_all('span')[1].text.strip()
+        l2.append(a)
+
     mytext = YOUR_MEETUP_GROUP_URL_HERE
     item_list = []
     
@@ -150,7 +207,10 @@ def get_mm(YOUR_MEETUP_GROUP_URL_HERE, YOUR_DIRECTORY_TO_SAVE_DATA, browser, t=3
         d['%s' %(x)]  = y
         item_list.append(d)
 
+    #moving on web pages.
+    num2 = -1
     for j in item_list :
+        num2 += 1
         memnum = j.keys()[0]
         elem = j[memnum]
         link = YOUR_MEETUP_GROUP_URL_HERE + "%s/" %(memnum)
@@ -160,7 +220,7 @@ def get_mm(YOUR_MEETUP_GROUP_URL_HERE, YOUR_DIRECTORY_TO_SAVE_DATA, browser, t=3
         #use of gmm_data here to get members data like in the meetup API
         #get meetup members data and write it to :
         #excel file
-        get_mm_data(YOUR_DIRECTORY_TO_SAVE_DATA, browser)
+        get_mm_data(YOUR_DIRECTORY_TO_SAVE_DATA, browser, x= l1[num2], y=l2[num2])
         browser.back()
         time.sleep(t)
 
@@ -248,6 +308,7 @@ def main(YOUR_DIRECTORY_TO_SAVE_DATA, YOUR_MEETUP_LOGIN_GROUP_URL_HERE, \
                         else :
                             pass                     
         else : 
+            
             pu.append(a)
             action(browser=browser, a=a, b=b)
             get_mm(YOUR_MEETUP_GROUP_URL_HERE, YOUR_DIRECTORY_TO_SAVE_DATA, \
@@ -258,7 +319,6 @@ def main(YOUR_DIRECTORY_TO_SAVE_DATA, YOUR_MEETUP_LOGIN_GROUP_URL_HERE, \
 if __name__ == "__main__" :
     
     today_date = datetime.date.today().isoformat()
-    #example of my login to group adress
     YOUR_MEETUP_LOGIN_GROUP_URL_HERE = "https://secure.meetup.com/fr-FR/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2Ffr-FR%2Fcultiver-autrement-des-legumes-a-paris%2F"    
     YOUR_MEETUP_GROUP_URL_HERE = "your_meetup.com_group_url" + "/members/"
     YOUR_MEETUP_LOGIN_NAME_HERE = "your_meetup.com_login"
